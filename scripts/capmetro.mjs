@@ -187,6 +187,24 @@ function loadTrips() {
   return m;
 }
 
+function loadCalendarDates() {
+  // Returns { date_string: Set<service_id> } for exception_type=1 (added)
+  const rows = loadCsv('calendar_dates.txt');
+  const m = {};
+  for (const r of rows) {
+    if (r.exception_type === '1') {
+      (m[r.date] ||= new Set()).add(r.service_id);
+    }
+  }
+  return m;
+}
+
+function getActiveServiceIds(dateStr) {
+  // dateStr format: YYYYMMDD
+  const calDates = loadCalendarDates();
+  return calDates[dateStr] || new Set();
+}
+
 function loadStopTimesForStop(stopId) {
   const rows = loadCsv('stop_times.txt');
   return rows.filter(r => r.stop_id === stopId);
@@ -362,13 +380,27 @@ async function cmdArrivals(opts) {
     const query = stopSearch.toLowerCase();
     const matches = Object.values(stops).filter(s => (s.stop_name || '').toLowerCase().includes(query));
     if (!matches.length) { console.log(`No stops found matching '${stopSearch}'.`); return; }
+
+    // Prefer exact name match, then "Station" matches (rail), then alphabetical
+    const rankStop = (s) => {
+      const name = (s.stop_name || '').toLowerCase();
+      if (name === query) return 0;                          // exact match
+      if (name === query + ' station') return 1;             // "lakeline station"
+      if (name.includes('station') && name.includes(query)) return 2; // station containing query
+      return 3;                                               // other partial matches
+    };
+    matches.sort((a, b) => {
+      const ra = rankStop(a), rb = rankStop(b);
+      if (ra !== rb) return ra - rb;
+      return a.stop_name.localeCompare(b.stop_name);
+    });
+
     if (matches.length > 1) {
       console.log(`Found ${matches.length} stops matching '${stopSearch}':`);
-      const sorted = matches.sort((a, b) => a.stop_name.localeCompare(b.stop_name)).slice(0, 10);
-      for (const s of sorted) console.log(`  ${s.stop_id.padStart(6)} — ${s.stop_name}`);
-      console.log(`\nUsing first match: ${sorted[0].stop_name}\n`);
+      for (const s of matches.slice(0, 10)) console.log(`  ${s.stop_id.padStart(6)} — ${s.stop_name}`);
+      console.log(`\nUsing best match: ${matches[0].stop_name}\n`);
     }
-    stopId = matches.sort((a, b) => a.stop_name.localeCompare(b.stop_name))[0].stop_id;
+    stopId = matches[0].stop_id;
   }
 
   if (!stopId || !stops[stopId]) {
@@ -433,29 +465,66 @@ async function cmdArrivals(opts) {
       console.log();
     }
   } else {
-    console.log('No real-time data available. Showing scheduled times:');
-    const stopTimes = loadStopTimesForStop(stopId);
+    // Get active service IDs for today
     const now = localNow();
+    const yyyy = String(now.getUTCFullYear());
+    const mo = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(now.getUTCDate()).padStart(2, '0');
+    const todayStr = `${yyyy}${mo}${dd}`;
+    const activeServices = getActiveServiceIds(todayStr);
+
     const hh = String(now.getUTCHours()).padStart(2, '0');
     const mm = String(now.getUTCMinutes()).padStart(2, '0');
     const ss = String(now.getUTCSeconds()).padStart(2, '0');
     const currentTime = `${hh}:${mm}:${ss}`;
 
-    const upcoming = [];
-    for (const st of stopTimes) {
-      const tripInfo = trips[st.trip_id] || {};
-      const routeId = tripInfo.route_id || '';
-      if (routeFilter && routeId !== routeFilter) continue;
-      const arrTime = st.arrival_time || st.departure_time || '';
-      if (arrTime > currentTime) {
+    // Try today first, fall back to tomorrow if no results
+    const stopTimes = loadStopTimesForStop(stopId);
+
+    function findUpcoming(serviceIds, minTime) {
+      const results = [];
+      const seen = new Set();
+      for (const st of stopTimes) {
+        const tripInfo = trips[st.trip_id] || {};
+        const routeId = tripInfo.route_id || '';
+        const serviceId = tripInfo.service_id || '';
+        if (!serviceIds.has(serviceId)) continue;
+        if (routeFilter && routeId !== routeFilter) continue;
+        const arrTime = st.arrival_time || st.departure_time || '';
+        if (arrTime <= minTime) continue;
         const rname = routes[routeId]?.route_short_name || routeId;
         const headsign = tripInfo.trip_headsign || '';
         if (headsignFilter && !headsign.toLowerCase().includes(headsignFilter)) continue;
-        upcoming.push({ route: rname, headsign, time: arrTime });
+        const dedup = `${rname}|${arrTime}|${headsign}`;
+        if (seen.has(dedup)) continue;
+        seen.add(dedup);
+        results.push({ route: rname, headsign, time: arrTime });
       }
+      results.sort((a, b) => a.time.localeCompare(b.time));
+      return results;
     }
-    upcoming.sort((a, b) => a.time.localeCompare(b.time));
-    for (const u of upcoming.slice(0, 10)) {
+
+    let upcoming = findUpcoming(activeServices, currentTime);
+    let dateLabel = 'today';
+
+    if (!upcoming.length) {
+      // Try tomorrow
+      const tomorrow = new Date(now.getTime() + 86400000);
+      const ty = String(tomorrow.getUTCFullYear());
+      const tm = String(tomorrow.getUTCMonth() + 1).padStart(2, '0');
+      const td = String(tomorrow.getUTCDate()).padStart(2, '0');
+      const tomorrowServices = getActiveServiceIds(`${ty}${tm}${td}`);
+      upcoming = findUpcoming(tomorrowServices, '00:00:00');
+      dateLabel = 'tomorrow';
+    }
+
+    console.log(`No real-time data available. Showing scheduled times for ${dateLabel}:`);
+
+    if (!upcoming.length) {
+      console.log(`  No upcoming departures found for ${dateLabel}.`);
+      return;
+    }
+    for (const u of upcoming.slice(0, 15)) {
       let timeStr = u.time;
       try {
         const [h, m] = u.time.split(':');
