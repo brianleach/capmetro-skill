@@ -17,8 +17,7 @@ import { parseArgs } from 'node:util';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { pipeline } from 'node:stream/promises';
-import { createWriteStream } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 // ---------------------------------------------------------------------------
 // Feed URLs (Texas Open Data Portal — open access, no key)
@@ -33,10 +32,20 @@ const FEEDS = {
 
 const GTFS_DIR = path.join(os.homedir(), '.capmetro', 'gtfs');
 
-// CST/CDT: Use CDT Mar-Nov, CST Nov-Mar (simplified)
+// CST/CDT: US Central Time — DST starts 2nd Sunday of March, ends 1st Sunday of November
 function localTzOffsetHours() {
-  const month = new Date().getUTCMonth() + 1;
-  return (month >= 3 && month < 11) ? -5 : -6;
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  // 2nd Sunday of March: find first Sunday in March, add 7 days
+  const mar1 = new Date(Date.UTC(year, 2, 1));
+  const firstSunMar = (7 - mar1.getUTCDay()) % 7 + 1;
+  const dstStart = Date.UTC(year, 2, firstSunMar + 7, 8); // 2:00 AM CST = 08:00 UTC
+  // 1st Sunday of November
+  const nov1 = new Date(Date.UTC(year, 10, 1));
+  const firstSunNov = (7 - nov1.getUTCDay()) % 7 + 1;
+  const dstEnd = Date.UTC(year, 10, firstSunNov, 7); // 2:00 AM CDT = 07:00 UTC
+  const ts = now.getTime();
+  return (ts >= dstStart && ts < dstEnd) ? -5 : -6;
 }
 
 function toLocalDate(ts) {
@@ -86,7 +95,7 @@ async function getProtobufRoot() {
     protobuf = (await import('protobufjs')).default;
   } catch {
     console.error('ERROR: protobufjs not installed.');
-    console.error('Run: cd /app/skills/capmetro && npm install protobufjs');
+    console.error('Run: npm install protobufjs (in the skill directory)');
     process.exit(1);
   }
 
@@ -187,22 +196,31 @@ function loadTrips() {
   return m;
 }
 
-function loadCalendarDates() {
-  // Returns { date_string: Set<service_id> } for exception_type=1 (added)
-  const rows = loadCsv('calendar_dates.txt');
-  const m = {};
-  for (const r of rows) {
-    if (r.exception_type === '1') {
-      (m[r.date] ||= new Set()).add(r.service_id);
+function getActiveServiceIds(dateStr) {
+  // dateStr format: YYYYMMDD — check both calendar.txt and calendar_dates.txt
+  const active = new Set();
+
+  // calendar.txt: recurring service by day-of-week
+  const calRows = loadCsv('calendar.txt');
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const y = parseInt(dateStr.slice(0, 4)), m = parseInt(dateStr.slice(4, 6)) - 1, d = parseInt(dateStr.slice(6, 8));
+  const dayOfWeek = new Date(Date.UTC(y, m, d)).getUTCDay();
+  const dayCol = dayNames[dayOfWeek];
+  for (const r of calRows) {
+    if (r[dayCol] === '1' && dateStr >= r.start_date && dateStr <= r.end_date) {
+      active.add(r.service_id);
     }
   }
-  return m;
-}
 
-function getActiveServiceIds(dateStr) {
-  // dateStr format: YYYYMMDD
-  const calDates = loadCalendarDates();
-  return calDates[dateStr] || new Set();
+  // calendar_dates.txt: exceptions (type 1 = added, type 2 = removed)
+  const exceptRows = loadCsv('calendar_dates.txt');
+  for (const r of exceptRows) {
+    if (r.date !== dateStr) continue;
+    if (r.exception_type === '1') active.add(r.service_id);
+    else if (r.exception_type === '2') active.delete(r.service_id);
+  }
+
+  return active;
 }
 
 function loadStopTimesForStop(stopId) {
@@ -242,14 +260,10 @@ async function cmdRefreshGtfs() {
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const buf = Buffer.from(await resp.arrayBuffer());
 
-  // Use AdmZip-like approach: Node built-in doesn't have zip support, use a simple unzip
-  // We'll use the `unzipper` approach manually or just shell out to `unzip`
   const tmpZip = path.join(GTFS_DIR, '_gtfs_tmp.zip');
   fs.writeFileSync(tmpZip, buf);
 
-  // Use child_process to unzip
-  const { execSync } = await import('node:child_process');
-  execSync(`unzip -o "${tmpZip}" -d "${GTFS_DIR}"`, { stdio: 'pipe' });
+  execFileSync('unzip', ['-o', tmpZip, '-d', GTFS_DIR], { stdio: 'pipe' });
   fs.unlinkSync(tmpZip);
 
   const files = fs.readdirSync(GTFS_DIR).filter(f => f.endsWith('.txt')).sort();
@@ -673,7 +687,10 @@ Commands:
   try {
     const parsed = parseArgs({ args: rest, options: optDefs, allowPositionals: true, strict: false });
     opts = parsed.values;
-  } catch {}
+  } catch (err) {
+    console.error(`Error parsing arguments: ${err.message}`);
+    process.exit(1);
+  }
 
   const handlers = {
     'refresh-gtfs': () => cmdRefreshGtfs(),
