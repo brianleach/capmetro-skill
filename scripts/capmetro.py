@@ -272,7 +272,9 @@ def cmd_vehicles(args):
 def cmd_arrivals(args):
     """Get next arrivals at a stop."""
     stop_id = args.stop
+    stop_search = args.stop_search
     route_filter = args.route
+    headsign_filter = args.headsign.lower() if args.headsign else None
 
     if not _ensure_gtfs():
         return
@@ -280,6 +282,22 @@ def cmd_arrivals(args):
     stops = _load_stops()
     routes = _load_routes()
     trips = _load_trips()
+
+    if stop_search:
+        query = stop_search.lower()
+        matches = [
+            s for s in stops.values()
+            if query in s.get("stop_name", "").lower()
+        ]
+        if not matches:
+            print(f"No stops found matching '{stop_search}'.")
+            return
+        if len(matches) > 1:
+            print(f"Found {len(matches)} stops matching '{stop_search}':")
+            for s in sorted(matches, key=lambda x: x["stop_name"])[:10]:
+                print(f"  {s['stop_id']:>6} — {s['stop_name']}")
+            print(f"\nUsing first match: {matches[0]['stop_name']}\n")
+        stop_id = sorted(matches, key=lambda x: x["stop_name"])[0]["stop_id"]
 
     if stop_id not in stops:
         print(f"Stop ID '{stop_id}' not found in GTFS data.")
@@ -319,6 +337,9 @@ def cmd_arrivals(args):
                     rlong = routes.get(route_id, {}).get("route_long_name", "")
                     trip_info = trips.get(trip_id, {})
                     headsign = trip_info.get("trip_headsign", rlong)
+
+                    if headsign_filter and headsign_filter not in headsign.lower():
+                        continue
 
                     now = local_now()
                     mins_away = (arrival_time - now).total_seconds() / 60
@@ -368,6 +389,10 @@ def cmd_arrivals(args):
             if arr_time > current_time:
                 rname = routes.get(route_id, {}).get("route_short_name", route_id)
                 headsign = trip_info.get("trip_headsign", "")
+
+                if headsign_filter and headsign_filter not in headsign.lower():
+                    continue
+
                 upcoming.append({
                     "route": rname,
                     "headsign": headsign,
@@ -538,8 +563,11 @@ def main():
 
     # arrivals
     p_arr = sub.add_parser("arrivals", help="Next arrivals at a stop")
-    p_arr.add_argument("--stop", required=True, help="Stop ID")
+    p_arr_stop = p_arr.add_mutually_exclusive_group(required=True)
+    p_arr_stop.add_argument("--stop", help="Stop ID")
+    p_arr_stop.add_argument("--stop-search", help="Search for stop by name (uses best match)")
     p_arr.add_argument("--route", help="Filter by route ID")
+    p_arr.add_argument("--headsign", help="Filter by trip headsign (substring match, e.g. 'lakeline')")
 
     # stops
     p_stops = sub.add_parser("stops", help="Search for stops")

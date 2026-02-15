@@ -67,6 +67,12 @@ python3 scripts/capmetro.py vehicles [--route 801]
 # Get next arrivals at a stop (by stop_id)
 python3 scripts/capmetro.py arrivals --stop <stop_id>
 
+# Get arrivals by searching stop name (uses best match)
+python3 scripts/capmetro.py arrivals --stop-search "lakeline" --route 550
+
+# Get arrivals filtered by direction/headsign
+python3 scripts/capmetro.py arrivals --stop-search "downtown" --route 550 --headsign "lakeline"
+
 # Get arrivals filtered by route at a stop
 python3 scripts/capmetro.py arrivals --stop <stop_id> --route 801
 

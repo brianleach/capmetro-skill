@@ -34,6 +34,8 @@ Just ask your agent naturally:
 python3 scripts/capmetro.py alerts
 python3 scripts/capmetro.py vehicles --route 801
 python3 scripts/capmetro.py arrivals --stop 5800 --route 801
+python3 scripts/capmetro.py arrivals --stop-search "lakeline" --route 550
+python3 scripts/capmetro.py arrivals --stop-search "downtown" --route 550 --headsign "lakeline"
 python3 scripts/capmetro.py stops --search "domain"
 python3 scripts/capmetro.py stops --near 30.40,-97.72 --radius 0.3
 python3 scripts/capmetro.py routes
