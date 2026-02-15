@@ -6,14 +6,14 @@ metadata:
   clawdbot:
     emoji: "🚌"
     requires:
-      bins: ["python3"]
+      bins: ["node"]
       env: []
     files: ["scripts/*"]
     install:
-      - id: pip-deps
+      - id: npm-deps
         kind: shell
-        command: "pip3 install gtfs-realtime-bindings requests protobuf"
-        label: "Install GTFS-RT Python dependencies"
+        command: "cd /app/skills/capmetro && npm install protobufjs"
+        label: "Install protobufjs Node.js dependency"
 ---
 
 # CapMetro Austin Transit
@@ -55,46 +55,46 @@ All feeds are **open access, no API key required**, hosted on the Texas Open Dat
 
 The scripts in this skill's `scripts/` directory handle fetching, parsing, and presenting CapMetro data.
 
-### Script: `scripts/capmetro.py`
+### Script: `scripts/capmetro.mjs`
 
 Main entry point. Supports these commands:
 
 ```bash
 # Get current service alerts
-python3 scripts/capmetro.py alerts
+node scripts/capmetro.mjs alerts
 
 # Get real-time vehicle positions (optionally filter by route)
-python3 scripts/capmetro.py vehicles [--route 801]
+node scripts/capmetro.mjs vehicles [--route 801]
 
 # Get next arrivals at a stop (by stop_id)
-python3 scripts/capmetro.py arrivals --stop <stop_id>
+node scripts/capmetro.mjs arrivals --stop <stop_id>
 
 # Get arrivals by searching stop name (uses best match)
-python3 scripts/capmetro.py arrivals --stop-search "lakeline" --route 550
+node scripts/capmetro.mjs arrivals --stop-search "lakeline" --route 550
 
 # Get arrivals filtered by direction/headsign
-python3 scripts/capmetro.py arrivals --stop-search "downtown" --route 550 --headsign "lakeline"
+node scripts/capmetro.mjs arrivals --stop-search "downtown" --route 550 --headsign "lakeline"
 
 # Get arrivals filtered by route at a stop
-python3 scripts/capmetro.py arrivals --stop <stop_id> --route 801
+node scripts/capmetro.mjs arrivals --stop <stop_id> --route 801
 
 # Search for stops by name or location
-python3 scripts/capmetro.py stops --search "domain" 
-python3 scripts/capmetro.py stops --near 30.4,-97.7
+node scripts/capmetro.mjs stops --search "domain" 
+node scripts/capmetro.mjs stops --near 30.4,-97.7
 
 # List all routes
-python3 scripts/capmetro.py routes
+node scripts/capmetro.mjs routes
 
 # Get route details including stops
-python3 scripts/capmetro.py route-info --route 801
+node scripts/capmetro.mjs route-info --route 801
 
 # Download/refresh GTFS static data (run periodically)
-python3 scripts/capmetro.py refresh-gtfs
+node scripts/capmetro.mjs refresh-gtfs
 ```
 
 ### Setup: GTFS Static Data
 
-On first use, run `python3 scripts/capmetro.py refresh-gtfs` to download and extract the static GTFS data (routes, stops, schedules) to `~/.capmetro/gtfs/`. This only needs to be refreshed when CapMetro updates their schedule (typically quarterly or during service changes).
+On first use, run `node scripts/capmetro.mjs refresh-gtfs` to download and extract the static GTFS data (routes, stops, schedules) to `~/.capmetro/gtfs/`. This only needs to be refreshed when CapMetro updates their schedule (typically quarterly or during service changes).
 
 ### Key Route Reference
 
