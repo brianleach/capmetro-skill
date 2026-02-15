@@ -1,18 +1,29 @@
 {
   "name": "capmetro",
   "version": "1.0.0",
-  "description": "Real-time Austin public transit data for your OpenClaw agent. Get vehicle positions, next arrivals, service alerts, and route info for MetroBus, MetroRapid, and MetroRail.",
-  "main": "index.js",
+  "description": "Real-time Austin public transit data for OpenClaw. Vehicle positions, next arrivals, service alerts, and route info for MetroBus, MetroRapid, and MetroRail.",
+  "main": "scripts/capmetro.mjs",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test test/"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://x-access-token:***REDACTED***@github.com/brianleach/capmetro-skill.git"
+    "url": "git+https://github.com/brianleach/capmetro-skill.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "openclaw",
+    "clawhub",
+    "skill",
+    "capmetro",
+    "austin",
+    "transit",
+    "gtfs",
+    "bus",
+    "rail"
+  ],
+  "author": "Brian Leach",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/brianleach/capmetro-skill/issues"
   },

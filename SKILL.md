@@ -2,6 +2,7 @@
 name: capmetro
 description: Austin CapMetro transit — real-time vehicle positions, next arrivals, service alerts, route info, and trip planning for buses and rail (MetroRail, MetroRapid, MetroBus). Use when the user asks about Austin public transit, bus schedules, train times, CapMetro alerts, or nearby stops.
 homepage: "https://github.com/brianleach/capmetro-skill"
+license: MIT
 metadata:
   clawdbot:
     emoji: "🚌"
@@ -12,7 +13,7 @@ metadata:
     install:
       - id: npm-deps
         kind: shell
-        command: "cd /app/skills/capmetro && npm install protobufjs"
+        command: "npm install --prefix $SKILL_DIR protobufjs"
         label: "Install protobufjs Node.js dependency"
 ---
 
