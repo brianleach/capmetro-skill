@@ -1,12 +1,14 @@
 ---
 name: capmetro
 description: Austin CapMetro transit — real-time vehicle positions, next arrivals, service alerts, route info, and trip planning for buses and rail (MetroRail, MetroRapid, MetroBus). Use when the user asks about Austin public transit, bus schedules, train times, CapMetro alerts, or nearby stops.
+homepage: "https://github.com/brianleach/capmetro-skill"
 metadata:
   clawdbot:
     emoji: "🚌"
     requires:
       bins: ["python3"]
       env: []
+    files: ["scripts/*"]
     install:
       - id: pip-deps
         kind: shell
@@ -144,3 +146,27 @@ When presenting transit info to the user:
 | 31-Day Pass | $41.25 |
 
 Payment via Umo app, tap-to-pay, or fare card. Free transfers within 2 hours.
+
+## External Endpoints
+
+| Endpoint | Data Sent | Data Received |
+|----------|-----------|---------------|
+| `data.texas.gov/download/cuc7-ywmd/...` | None (GET only) | Vehicle positions (JSON) |
+| `data.texas.gov/download/eiei-9rpf/...` | None (GET only) | Vehicle positions (Protobuf) |
+| `data.texas.gov/download/rmk2-acnw/...` | None (GET only) | Trip updates (Protobuf) |
+| `data.texas.gov/download/nusn-7fcn/...` | None (GET only) | Service alerts (Protobuf) |
+| `data.texas.gov/download/r4v4-vz24/...` | None (GET only) | GTFS static data (ZIP) |
+
+All endpoints are open-access Texas Open Data Portal URLs. No API key, authentication, or user data is transmitted.
+
+## Security & Privacy
+
+- **No credentials required** — all data sources are open access, no API keys or tokens
+- **No user data transmitted** — requests are anonymous GET calls with no query parameters containing user info
+- **Local storage only** — GTFS static data is cached locally at `~/.capmetro/gtfs/`; no data is written elsewhere
+- **No telemetry** — this skill does not phone home or collect usage data
+- **Input handling** — stop names and route IDs from user input are used only for local filtering, never interpolated into URLs or shell commands
+
+## Trust Statement
+
+This skill only reads publicly available transit data from the Texas Open Data Portal. It does not access, store, or transmit any personal information. All network requests are read-only GET calls to open government data feeds.

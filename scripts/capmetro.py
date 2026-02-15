@@ -3,6 +3,14 @@
 CapMetro Austin Transit - OpenClaw Skill
 Real-time vehicle positions, arrivals, alerts, and route info.
 All data from Texas Open Data Portal (no API key required).
+
+SECURITY MANIFEST
+  Environment variables: None
+  External endpoints:    data.texas.gov (read-only GET, open access, no auth)
+  Local files written:   ~/.capmetro/gtfs/ (GTFS static data cache)
+  Local files read:      ~/.capmetro/gtfs/*.txt (GTFS CSV files)
+  User input handling:   Used for local filtering only, never interpolated into
+                         URLs or shell commands
 """
 
 import argparse
