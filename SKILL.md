@@ -1,11 +1,12 @@
 ---
-name: capmetro
+name: capmetro-skill
 description: Austin CapMetro transit — real-time vehicle positions, next arrivals, service alerts, route info, and trip planning for buses and rail (MetroRail, MetroRapid, MetroBus). Use when the user asks about Austin public transit, bus schedules, train times, CapMetro alerts, or nearby stops.
 homepage: "https://github.com/brianleach/capmetro-skill"
 license: MIT
 metadata:
   clawdbot:
     emoji: "🚌"
+    tags: [transit, austin, capmetro, transportation, bus, train, schedule]
     requires:
       bins: ["node"]
       env: []
