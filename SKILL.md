@@ -10,7 +10,7 @@ metadata:
     requires:
       bins: ["node", "unzip"]
       env: []
-    files: ["scripts/*"]
+    files: ["scripts/capmetro.mjs", "scripts/gtfs-realtime.proto"]
     install:
       - id: npm-deps
         kind: shell
