@@ -1,6 +1,6 @@
 ---
 name: capmetro-skill
-description: Austin CapMetro transit — real-time vehicle positions, next arrivals, service alerts, route info, and trip planning for buses and rail (MetroRail, MetroRapid, MetroBus). Use when the user asks about Austin public transit, bus schedules, train times, CapMetro alerts, or nearby stops.
+description: Austin CapMetro transit - real-time vehicle positions, next arrivals, service alerts, route info, and trip planning for buses and rail (MetroRail, MetroRapid, MetroBus). Use when the user asks about Austin public transit, bus schedules, train times, CapMetro alerts, or nearby stops.
 homepage: "https://github.com/brianleach/capmetro-skill"
 license: MIT
 metadata:
@@ -8,7 +8,7 @@ metadata:
     emoji: "🚌"
     tags: [transit, austin, capmetro, transportation, bus, train, schedule]
     requires:
-      bins: ["node"]
+      bins: ["node", "unzip"]
       env: []
     files: ["scripts/*"]
     install:
@@ -20,7 +20,7 @@ metadata:
 
 # CapMetro Austin Transit
 
-Real-time Austin CapMetro transit data — vehicle positions, next arrivals, service alerts, and route information. No API key required.
+Real-time Austin CapMetro transit data - vehicle positions, next arrivals, service alerts, and route information. No API key required.
 
 ## When to Use
 
@@ -36,7 +36,7 @@ Real-time Austin CapMetro transit data — vehicle positions, next arrivals, ser
 
 All feeds are **open access, no API key required**, hosted on the Texas Open Data Portal.
 
-### GTFS-RT (Real-Time) Feeds — Updated every 15 seconds
+### GTFS-RT (Real-Time) Feeds - Updated every 15 seconds
 
 | Feed | Format | URL |
 |------|--------|-----|
@@ -45,7 +45,7 @@ All feeds are **open access, no API key required**, hosted on the Texas Open Dat
 | Trip Updates | Protobuf | `https://data.texas.gov/download/rmk2-acnw/application%2Foctet-stream` |
 | Service Alerts | Protobuf | `https://data.texas.gov/download/nusn-7fcn/application%2Foctet-stream` |
 
-### GTFS Static Feed — Route/Stop/Schedule data
+### GTFS Static Feed - Route/Stop/Schedule data
 
 | Feed | Format | URL |
 |------|--------|-----|
@@ -118,14 +118,14 @@ On first use, run `node scripts/capmetro.mjs refresh-gtfs` to download and extra
 - **Stop IDs** can be found on CapMetro stop signs, in the Transit app, or by searching with the `stops` command
 - **MetroRapid 801/803** have the most frequent service (every 10-12 minutes during peak)
 - **MetroRail Red Line (550)** runs Leander to Downtown Austin with limited frequency
-- Service alerts often contain detour information — check alerts before advising routes
+- Service alerts often contain detour information - check alerts before advising routes
 - Vehicle position data updates every ~15 seconds, so locations are near real-time
 
 ### Error Handling
 
 - If a feed returns an error or empty data, inform the user that real-time data may be temporarily unavailable
 - The JSON vehicle positions feed is easier to parse and a good fallback if protobuf parsing fails
-- GTFS static data is required for stop names, route names, and schedule lookups — ensure it's been downloaded
+- GTFS static data is required for stop names, route names, and schedule lookups - ensure it's been downloaded
 
 ### Response Formatting
 
@@ -163,11 +163,11 @@ All endpoints are open-access Texas Open Data Portal URLs. No API key, authentic
 
 ## Security & Privacy
 
-- **No credentials required** — all data sources are open access, no API keys or tokens
-- **No user data transmitted** — requests are anonymous GET calls with no query parameters containing user info
-- **Local storage only** — GTFS static data is cached locally at `~/.capmetro/gtfs/`; no data is written elsewhere
-- **No telemetry** — this skill does not phone home or collect usage data
-- **Input handling** — stop names and route IDs from user input are used only for local filtering, never interpolated into URLs or shell commands
+- **No credentials required** - all data sources are open access, no API keys or tokens
+- **No user data transmitted** - requests are anonymous GET calls with no query parameters containing user info
+- **Local storage only** - GTFS static data is cached locally at `~/.capmetro/gtfs/`; no data is written elsewhere
+- **No telemetry** - this skill does not phone home or collect usage data
+- **Input handling** - stop names and route IDs from user input are used only for local filtering, never interpolated into URLs or shell commands
 
 ## Trust Statement
 
