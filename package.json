@@ -1,9 +1,15 @@
 {
   "name": "capmetro",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Real-time Austin public transit data for OpenClaw. Vehicle positions, next arrivals, service alerts, and route info for MetroBus, MetroRapid, and MetroRail.",
   "main": "scripts/capmetro.mjs",
   "type": "module",
+  "files": [
+    "scripts/capmetro.mjs",
+    "scripts/gtfs-realtime.proto",
+    "SKILL.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "echo \"No tests yet\" && exit 0"
   },
