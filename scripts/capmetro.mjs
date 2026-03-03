@@ -340,7 +340,7 @@ async function cmdVehicles(opts) {
     const trip = v.trip || {};
     const pos = v.position || {};
     const vid = v.vehicle?.id || '?';
-    const rid = trip.route_id || '';
+    const rid = trip.routeId || trip.route_id || '';
     const lat = pos.latitude;
     const lon = pos.longitude;
     const ts = v.timestamp;
